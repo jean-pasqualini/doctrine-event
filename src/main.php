@@ -1,6 +1,7 @@
 <?php
 namespace App;
 
+use App\Demo\CascadePersistWithOrphanRemovalScenario;
 use App\Demo\GoodScenario;
 use App\Demo\BadScenario;
 use Symfony\Component\Process\Process;
@@ -16,6 +17,7 @@ $demos = [
     new GoodScenario\OnPostPersistWorkflowDemo(),
     new BadScenario\OnUpdateWorkflowDemo(),
     new BadScenario\OnPrePersistWorkflowDemo(),
+    new CascadePersistWithOrphanRemovalScenario(),
 ];
 
 $filter = $argv[1] ?? null;
