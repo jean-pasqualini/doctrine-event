@@ -6,7 +6,7 @@ namespace App\Doctrine;
 
 use App\Logger;
 
-class IdentityMap implements \ArrayAccess
+class IdentityMap extends LoggedMap
 {
     /** @var Logger */
     private $logger;

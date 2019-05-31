@@ -6,7 +6,7 @@ namespace App\Doctrine;
 
 use App\Logger;
 
-class LoggedMap implements \ArrayAccess
+class LoggedMap implements \ArrayAccess, \IteratorAggregate
 {
     /** @var Logger */
     private $logger;
@@ -19,13 +19,21 @@ class LoggedMap implements \ArrayAccess
 
     private $inbriqued;
 
-    public function __construct(Logger $logger, $input, string $type, bool $dumpScalar = false, bool $inbriqued = false)
+    private $resolveSplObjectHash;
+
+    public function __construct(Logger $logger, array $input, string $type, bool $dumpScalar = false, bool $inbriqued = false, ResolveSplObjectHash $resolveSplObjectHash = null)
     {
         $this->type = $type;
         $this->logger = $logger;
         $this->data = $input;
         $this->dumpScalar = $dumpScalar;
         $this->inbriqued = $inbriqued;
+        $this->resolveSplObjectHash = $resolveSplObjectHash;
+    }
+
+    public function getIterator()
+    {
+        return new \ArrayIterator($this->data);
     }
 
     public function dumpScalar($scalar)
@@ -52,16 +60,32 @@ class LoggedMap implements \ArrayAccess
     public function offsetSet($index, $newval)
     {
         $this->logger->log($this->type, 'SET {key} = {value}', [
-            '{key}' => $index,
+            '{key}' => $this->resolveIndex($index),
             '{value}' => $this->dumpScalar($newval),
         ]);
         $this->data[$index] = $newval;
     }
 
+    protected function resolveIndex($index)
+    {
+        if (null === $this->resolveSplObjectHash || strrpos($index, '000000') === false) {
+            return $index;
+        }
+
+        $resolvedObject = $this->resolveSplObjectHash->resolve($index);
+
+        if (null === $resolvedObject) {
+            return $index. '(unresolved)';
+        }
+
+        return $this->dumpScalar($resolvedObject);
+    }
+
+
     public function offsetGet($index)
     {
         $this->logger->log($this->type, 'GET {key}', [
-            '{key}' => $index,
+            '{key}' => $this->resolveIndex($index),
         ]);
 
         if ($this->inbriqued) {
@@ -85,4 +109,15 @@ class LoggedMap implements \ArrayAccess
     {
         unset($this->data[$offset]);
     }
+
+    public function getArrayCopy()
+    {
+        return $this->data;
+    }
+
+    public function &getOriginalArray()
+    {
+        return $this->data;
+    }
+
 }

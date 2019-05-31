@@ -21,6 +21,7 @@ namespace Doctrine\ORM;
 
 use App\Doctrine\IdentityMap;
 use App\Doctrine\LoggedMap;
+use App\Doctrine\ResolveSplObjectHash;
 use App\Logger;
 use Doctrine\Common\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\DBAL\LockMode;
@@ -305,36 +306,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function __construct(EntityManagerInterface $em)
     {
-        // Trace map
-        $logger = new Logger();
-        $this->identityMap = new IdentityMap($logger, $this->identityMap);
-        $this->entityIdentifiers = new LoggedMap(
-            $logger,
-            $this->entityIdentifiers,
-            '[entity_identifier]',
-            true
-        );
-        $this->originalEntityData = new LoggedMap(
-            $logger,
-            $this->originalEntityData,
-            '[original_entity_data]',
-            true,
-            true
-        );
-        $this->entityChangeSets = new LoggedMap(
-            $logger,
-            $this->entityChangeSets,
-            '[entity_changeset]',
-            true,
-            false
-        );
-        $this->entityStates = new LoggedMap(
-            $logger,
-            $this->entityStates,
-            '[entity_states]',
-            true,
-            false
-        );
+        $this->wrapArray();
 
         $this->em                         = $em;
         $this->evm                        = $em->getEventManager();
@@ -473,6 +445,65 @@ class UnitOfWork implements PropertyChangedListener
         $this->visitedCollections =
         $this->scheduledForSynchronization =
         $this->orphanRemovals = array();
+
+        $this->wrapArray();
+    }
+
+    public function wrapArray()
+    {
+// Trace map
+        $logger = new Logger();
+        $this->identityMap = new IdentityMap($logger, $this->identityMap);
+        if (!$this->entityIdentifiers instanceof LoggedMap) {
+            $this->entityIdentifiers = new LoggedMap(
+                $logger,
+                $this->entityIdentifiers,
+                '[entity_identifier]',
+                true
+            );
+        }
+        if (!$this->originalEntityData instanceof LoggedMap) {
+            $this->originalEntityData = new LoggedMap(
+                $logger,
+                $this->originalEntityData,
+                '[original_entity_data]',
+                true,
+                true
+            );
+        }
+        $resoverSplObjectHash = new ResolveSplObjectHash($this->entityIdentifiers, $this->identityMap);
+        $this->entityChangeSets = new LoggedMap(
+            $logger,
+            $this->entityChangeSets,
+            '[entity_changeset]',
+            true,
+            false,
+            $resoverSplObjectHash
+        );
+        if (!$this->entityStates instanceof LoggedMap) {
+            $this->entityStates = new LoggedMap(
+                $logger,
+                $this->entityStates,
+                '[entity_states]',
+                true,
+                false,
+                $resoverSplObjectHash
+            );
+        }
+        $this->extraUpdates = new LoggedMap(
+            $logger,
+            $this->extraUpdates,
+            '[extra_update]',
+            true,
+            false,
+            $resoverSplObjectHash
+        );
+        $this->entityInsertions = new LoggedMap($logger, $this->entityInsertions, '[entit_insertion]', true, false, $resoverSplObjectHash);
+        $this->entityUpdates = new LoggedMap($logger, $this->entityUpdates, '[entit_update]', true, false, $resoverSplObjectHash);
+        $this->entityDeletions = new LoggedMap($logger, $this->entityDeletions, '[entit_delete]', true, false, $resoverSplObjectHash);
+        //$this->entityInsertions = new \ArrayObject($this->entityInsertions);
+        //$this->entityUpdates = new \ArrayObject($this->entityUpdates);
+        //$this->entityDeletions = new \ArrayObject($this->entityDeletions);
     }
 
     /**
@@ -1159,7 +1190,7 @@ class UnitOfWork implements PropertyChangedListener
     private function getCommitOrder(array $entityChangeSet = null)
     {
         if ($entityChangeSet === null) {
-            $entityChangeSet = array_merge($this->entityInsertions, $this->entityUpdates, $this->entityDeletions);
+            $entityChangeSet = array_merge($this->entityInsertions->getArrayCopy(), $this->entityUpdates->getArrayCopy(), $this->entityDeletions->getArrayCopy());
         }
 
         $calc = $this->getCommitOrderCalculator();
