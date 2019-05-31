@@ -8,12 +8,12 @@ use App\Logger;
 
 class IdentityMap extends LoggedMap
 {
-    /** @var Logger */
+    /** @var FunctionnalLogger */
     private $logger;
 
     private $data = [];
 
-    public function __construct(Logger $logger, $input = array())
+    public function __construct(FunctionnalLogger $logger, $input = array())
     {
         $this->logger = $logger;
         $this->data = $input;
@@ -21,21 +21,24 @@ class IdentityMap extends LoggedMap
 
     public function offsetSet($index, $newval)
     {
+        /**
         $this->logger->log('[identityMap] [class]', 'SET {key}', [
             '{key}' => $index,
         ]);
+         */
         $this->data[$index] = $newval;
     }
 
     public function offsetGet($index)
     {
-        $this->logger->log('[identityMap] [class]', 'GET {key}', [
-            '{key}' => $index,
-        ]);
+        $this->logger->get($index);
 
         if (class_exists($index)) {
             if (!isset($this->data[$index])) {
-                $this->data[$index] = new IdentityMapObject($this->logger, []);
+                $this->data[$index] = new IdentityMapObject(
+                    new FunctionnalLogger($this->logger->getLogger(), FunctionnalLogger::IDENTIY_MAP_OBJECT, $this->logger->getResolveSplObjectHash()),
+                    []
+                );
             }
 
             return $this->data[$index];

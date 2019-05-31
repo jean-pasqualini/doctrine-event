@@ -8,12 +8,10 @@ use App\Logger;
 
 class LoggedMap implements \ArrayAccess, \IteratorAggregate
 {
-    /** @var Logger */
+    /** @var FunctionnalLogger */
     private $logger;
 
     private $data = [];
-
-    private $type;
 
     private $dumpScalar;
 
@@ -21,9 +19,8 @@ class LoggedMap implements \ArrayAccess, \IteratorAggregate
 
     private $resolveSplObjectHash;
 
-    public function __construct(Logger $logger, array $input, string $type, bool $dumpScalar = false, bool $inbriqued = false, ResolveSplObjectHash $resolveSplObjectHash = null)
+    public function __construct(FunctionnalLogger $logger, array $input, bool $dumpScalar = false, bool $inbriqued = false, ResolveSplObjectHash $resolveSplObjectHash = null)
     {
-        $this->type = $type;
         $this->logger = $logger;
         $this->data = $input;
         $this->dumpScalar = $dumpScalar;
@@ -59,10 +56,13 @@ class LoggedMap implements \ArrayAccess, \IteratorAggregate
 
     public function offsetSet($index, $newval)
     {
-        $this->logger->log($this->type, 'SET {key} = {value}', [
+        $this->logger->set($index, $newval);
+        /**
+        $this->logger->log($this->type, '$this->'.$this->type.'["{key}"] = {value}', [
             '{key}' => $this->resolveIndex($index),
             '{value}' => $this->dumpScalar($newval),
-        ]);
+        ], Logger::MODE_2);
+         */
         $this->data[$index] = $newval;
     }
 
@@ -84,16 +84,23 @@ class LoggedMap implements \ArrayAccess, \IteratorAggregate
 
     public function offsetGet($index)
     {
-        $this->logger->log($this->type, 'GET {key}', [
-            '{key}' => $this->resolveIndex($index),
-        ]);
+        /**
+        $this->type = str_replace(['[', ']'], '', $this->type);
+
+        $this->logger->log('', 'return $this->'.$this->type.'["{key}"]', [
+            '{key}' => $index,
+        ], Logger::MODE_2);
+
+         */
+
+        $this->logger->get($index);
 
         if ($this->inbriqued) {
             if (!isset($this->data[$index])) {
                 $this->data[$index] = [];
             }
             if (!$this->data[$index] instanceof LoggedMap) {
-                $this->data[$index] = new self($this->logger, $this->data[$index], $this->type.' [imbriqued]', $this->dumpScalar, $this->inbriqued );
+                $this->data[$index] = new self($this->logger, $this->data[$index], $this->dumpScalar, false );
             }
         }
 

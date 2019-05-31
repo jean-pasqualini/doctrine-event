@@ -4,33 +4,24 @@
 namespace App\Doctrine;
 
 
+use App\Entity\Article;
+use App\Entity\Category;
+use App\Entity\Picture;
+use App\Entity\Product;
+use Doctrine\ORM\UnitOfWork;
+
 class ResolveSplObjectHash
 {
-    /**
-     * @var LoggedMap
-     */
-    private $entityIdentifier;
-    /**
-     * @var LoggedMap
-     */
-    private $identityMap;
+    /** @var UnitOfWork */
+    private $unitOfWork;
 
-    public function __construct(LoggedMap $entityIdentifier, LoggedMap $identityMap)
+    public function __construct(UnitOfWork $unitOfWork)
     {
-        $this->entityIdentifier = $entityIdentifier;
-        $this->identityMap = $identityMap;
+        $this->unitOfWork = $unitOfWork;
     }
 
     public function resolve($index)
     {
-        $entityIdentifier = $this->entityIdentifier->getOriginalArray();
-
-        if (!isset($entityIdentifier[$index])) {
-            return null;
-        }
-
-        $id = $entityIdentifier[$index]['id'];
-
-        return null;
+        return $this->unitOfWork->findByHash($index);
     }
 }

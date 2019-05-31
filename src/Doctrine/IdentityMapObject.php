@@ -8,12 +8,12 @@ use App\Logger;
 
 class IdentityMapObject implements \ArrayAccess
 {
-    /** @var Logger */
+    /** @var FunctionnalLogger */
     private $logger;
 
     private $data = [];
 
-    public function __construct(Logger $logger, $input = array())
+    public function __construct(FunctionnalLogger $logger, $input = array())
     {
         $this->logger = $logger;
         $this->data = $input;
@@ -38,18 +38,24 @@ class IdentityMapObject implements \ArrayAccess
 
     public function offsetSet($index, $newval)
     {
+        $this->logger->set($index, $newval);
+        /**
         $this->logger->log('[identityMap] [object]', 'SET {key} = {value}', [
             '{key}' => $index,
             '{value}' => $this->dumpScalar($newval),
         ]);
+         */
         $this->data[$index] = $newval;
     }
 
     public function offsetGet($index)
     {
+        $this->logger->get($index);
+        /**
         $this->logger->log('[identityMap] [object]', 'GET {key}', [
             '{key}' => $index,
         ]);
+         */
 
         return $this->data[$index];
     }

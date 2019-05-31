@@ -19,9 +19,11 @@
 
 namespace Doctrine\ORM;
 
+use App\Doctrine\FunctionnalLogger;
 use App\Doctrine\IdentityMap;
 use App\Doctrine\LoggedMap;
 use App\Doctrine\ResolveSplObjectHash;
+use App\Doctrine\UnitOfWorkTrait;
 use App\Logger;
 use Doctrine\Common\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\DBAL\LockMode;
@@ -73,6 +75,20 @@ use Doctrine\ORM\Cache\AssociationCacheEntry;
  */
 class UnitOfWork implements PropertyChangedListener
 {
+    use UnitOfWorkTrait;
+
+    const WRAP_ARRAY = [
+        FunctionnalLogger::IDENTIY_MAP_CLASS        => true,
+        FunctionnalLogger::ENTITY_IDENTIFIER        => false,
+        FunctionnalLogger::ORIGINAL_ENTITY_DATA     => true,
+        FunctionnalLogger::ENTITY_CHANGESET         => true,
+        FunctionnalLogger::ENTITY_STATE             => true,
+        FunctionnalLogger::EXTRA_UPDATE             => true,
+        FunctionnalLogger::ENTITY_INSERT            => true,
+        FunctionnalLogger::ENTITY_UPDATE            => true,
+        FunctionnalLogger::ENTITY_DELETE            => true,
+    ];
+
     /**
      * An entity is in MANAGED state when its persistence is managed by an EntityManager.
      */
@@ -447,63 +463,6 @@ class UnitOfWork implements PropertyChangedListener
         $this->orphanRemovals = array();
 
         $this->wrapArray();
-    }
-
-    public function wrapArray()
-    {
-// Trace map
-        $logger = new Logger();
-        $this->identityMap = new IdentityMap($logger, $this->identityMap);
-        if (!$this->entityIdentifiers instanceof LoggedMap) {
-            $this->entityIdentifiers = new LoggedMap(
-                $logger,
-                $this->entityIdentifiers,
-                '[entity_identifier]',
-                true
-            );
-        }
-        if (!$this->originalEntityData instanceof LoggedMap) {
-            $this->originalEntityData = new LoggedMap(
-                $logger,
-                $this->originalEntityData,
-                '[original_entity_data]',
-                true,
-                true
-            );
-        }
-        $resoverSplObjectHash = new ResolveSplObjectHash($this->entityIdentifiers, $this->identityMap);
-        $this->entityChangeSets = new LoggedMap(
-            $logger,
-            $this->entityChangeSets,
-            '[entity_changeset]',
-            true,
-            false,
-            $resoverSplObjectHash
-        );
-        if (!$this->entityStates instanceof LoggedMap) {
-            $this->entityStates = new LoggedMap(
-                $logger,
-                $this->entityStates,
-                '[entity_states]',
-                true,
-                false,
-                $resoverSplObjectHash
-            );
-        }
-        $this->extraUpdates = new LoggedMap(
-            $logger,
-            $this->extraUpdates,
-            '[extra_update]',
-            true,
-            false,
-            $resoverSplObjectHash
-        );
-        $this->entityInsertions = new LoggedMap($logger, $this->entityInsertions, '[entit_insertion]', true, false, $resoverSplObjectHash);
-        $this->entityUpdates = new LoggedMap($logger, $this->entityUpdates, '[entit_update]', true, false, $resoverSplObjectHash);
-        $this->entityDeletions = new LoggedMap($logger, $this->entityDeletions, '[entit_delete]', true, false, $resoverSplObjectHash);
-        //$this->entityInsertions = new \ArrayObject($this->entityInsertions);
-        //$this->entityUpdates = new \ArrayObject($this->entityUpdates);
-        //$this->entityDeletions = new \ArrayObject($this->entityDeletions);
     }
 
     /**
@@ -1181,6 +1140,22 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * EIUD = EI + EU + ED
+     * EI = Entity Insert
+     * EU = Entity Update
+     * ED = Entity delete
+     * @return array
+     */
+    protected function getMergedEntityIUD()
+    {
+        $EI = (is_array($this->entityInsertions)) ? $this->entityInsertions : $this->entityInsertions->getArrayCopy();
+        $EU = (is_array($this->entityUpdates)) ? $this->entityUpdates : $this->entityUpdates->getArrayCopy();
+        $ED = (is_array($this->entityDeletions)) ? $this->entityDeletions : $this->entityDeletions->getArrayCopy();
+
+        return array_merge($EI, $EU, $ED);
+    }
+
+    /**
      * Gets the commit order.
      *
      * @param array|null $entityChangeSet
@@ -1190,7 +1165,7 @@ class UnitOfWork implements PropertyChangedListener
     private function getCommitOrder(array $entityChangeSet = null)
     {
         if ($entityChangeSet === null) {
-            $entityChangeSet = array_merge($this->entityInsertions->getArrayCopy(), $this->entityUpdates->getArrayCopy(), $this->entityDeletions->getArrayCopy());
+            $entityChangeSet = $this->getMergedEntityIUD();
         }
 
         $calc = $this->getCommitOrderCalculator();
@@ -1832,6 +1807,26 @@ class UnitOfWork implements PropertyChangedListener
                 throw new UnexpectedValueException("Unexpected entity state: $entityState." . self::objToStr($entity));
         }
 
+    }
+
+    public function findByHash($idHash)
+    {
+
+        $merged = $this->getMergedEntityIUD();
+
+        foreach ($merged as $entity) {
+            if ($idHash === spl_object_hash($entity)) {
+                return $entity;
+            }
+        }
+
+        foreach ($this->identityMap as $class => $objects) {
+            if(isset($objects[$idHash])) {
+                return $objects[$idHash];
+            }
+        }
+
+        return null;
     }
 
     /**
