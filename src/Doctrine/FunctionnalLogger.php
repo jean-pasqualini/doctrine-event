@@ -9,16 +9,38 @@ use App\Logger;
 class FunctionnalLogger
 {
     const REAL_HAST = [
-        'rouge',
-        'vert',
-        'bleu',
-        'jaune',
-        'orange',
-        'violet',
-        'noir',
-        'blanc',
-        'gris',
-        'marron'
+        'R2-D2',
+        'CHEWBACCA',
+        'C-3PO',
+        'LUKE',
+        'DARTH VADER',
+        'CAMIE',
+        'BIGGS',
+        'LEIA',
+        'BERU',
+        'OWEN',
+        'OBI-WAN',
+        'MOTTI',
+        'TARKIN',
+        'HAN SOLO',
+        'GREEDO',
+        'JABBA',
+        'DODONNA',
+        'GOLD LEADER',
+        'WEDGE',
+        'RED LEADER',
+        'RED TEN',
+        'GOLD FIVE',
+        'YODA',
+        'BOBA FETT',
+        'PALPATINE',
+        'DARK MAUL',
+        'REY',
+        'MAZ KANATA',
+        'FINN',
+        'LANDO',
+        'WAMPA',
+        'WATTO',
     ];
 
     const ENTITY_IDENTIFIER = 1;
@@ -166,6 +188,12 @@ class FunctionnalLogger
                 '{identifier}' => $index[1]
             ]);
         }
+    }
+
+    public static function onClear()
+    {
+        self::$mapHash = [];
+        self::$indexHash = 1;
     }
 
     /**

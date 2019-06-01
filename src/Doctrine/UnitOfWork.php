@@ -2480,6 +2480,8 @@ class UnitOfWork implements PropertyChangedListener
             $this->clearEntityInsertionsForEntityName($entityName);
         }
 
+        $this->wrapArray();
+
         if ($this->evm->hasListeners(Events::onClear)) {
             $this->evm->dispatchEvent(Events::onClear, new Event\OnClearEventArgs($this->em, $entityName));
         }

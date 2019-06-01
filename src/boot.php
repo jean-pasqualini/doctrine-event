@@ -2,10 +2,12 @@
 
 namespace App;
 
+use App\Doctrine\FunctionnalLogger;
 use App\EventListener\DoctrineEventListener;
 use Doctrine\Common\EventManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Events;
 use Doctrine\ORM\Tools\Setup;
 
 $config = Setup::createAnnotationMetadataConfiguration(
@@ -28,5 +30,10 @@ $eventManager = new EventManager();
 $eventManager->addEventSubscriber(new DoctrineEventListener($logger));
 
 $entityManager = new EntityManagerLoggerProxy($logger, EntityManager::create($conn, $config, $eventManager));
+$eventManager->addEventListener(Events::onClear, new Class() {
+    public function onClear() {
+        FunctionnalLogger::onClear();
+    }
+});
 
 return $entityManager;
