@@ -94,7 +94,7 @@ class IdentityMap
      * @param object  $object
      * @param mixed[] $data
      */
-    public function addToIdentityMap($object) : void
+    public function addToIdentityMap($object)
     {
         $rootName = $this->unitOfWork->getRootEntityName($object);
         $identifiersHash = $this->unitOfWork->getEntityIdentifierHash($object);
@@ -107,7 +107,7 @@ class IdentityMap
      * @param object  $object
      * @param mixed[] $data
      */
-    public function addComplexToIdentityMap($rootName, $objectIdentifier, $object) : void
+    public function addComplexToIdentityMap($rootName, $objectIdentifier, $object)
     {
         $objectIdentifier = implode(' ', (array) $objectIdentifier);
         $this->identityMap[$rootName][$objectIdentifier] = $object;
