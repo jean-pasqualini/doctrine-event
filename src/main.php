@@ -4,6 +4,7 @@ namespace App;
 use App\Demo\CascadePersistWithOrphanRemovalScenario;
 use App\Demo\GoodScenario;
 use App\Demo\BadScenario;
+use App\Doctrine\FunctionnalLogger;
 use Doctrine\ORM\UnitOfWork;
 use Symfony\Component\Process\Process;
 
@@ -38,5 +39,7 @@ foreach($demos as $demo) {
         echo '======'.str_repeat('=', strlen($class)).'====='.PHP_EOL;
 
         $demo->run();
+
+        FunctionnalLogger::onClear();
     }
 }

@@ -246,7 +246,9 @@ class FunctionnalLogger
     public static function onClear()
     {
         self::$mapHash = [];
+        self::$mapColor = [];
         self::$indexHash = 1;
+        self::$indexColor = 1;
     }
 
     /**
