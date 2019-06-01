@@ -81,6 +81,8 @@ class IdentityMap
     public function tryGetById(string $className, $objectIdentifier)
     {
         $objectIdentifier = implode(' ', (array) $objectIdentifier);
+        $this->functionnalLogger->get([$className, $objectIdentifier]);
+
         if (isset($this->identityMap[$className][$objectIdentifier])) {
             return $this->identityMap[$className][$objectIdentifier];
         }
@@ -98,6 +100,7 @@ class IdentityMap
         $identifiersHash = $this->unitOfWork->getEntityIdentifierHash($object);
 
         $this->addComplexToIdentityMap($rootName, $identifiersHash, $object);
+        $this->functionnalLogger->set($identifiersHash, $object);
     }
 
     /**
@@ -108,6 +111,8 @@ class IdentityMap
     {
         $objectIdentifier = implode(' ', (array) $objectIdentifier);
         $this->identityMap[$rootName][$objectIdentifier] = $object;
+
+        $this->functionnalLogger->set($objectIdentifier, $object);
     }
 
     public function count() : int

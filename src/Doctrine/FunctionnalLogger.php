@@ -107,7 +107,7 @@ class FunctionnalLogger
                 ]);
             }
         }
-        if (self::IDENTIY_MAP_OBJECT === $this->type) {
+        if (self::IDENTIY_MAP_CLASS === $this->type) {
             $this->logger->log('INFO.identity', 'add to identitymap ({class}) with identifier {identifier}', [
                 '{class}' => $this->dumpObject($value),
                 '{identifier}' => $index
@@ -161,13 +161,9 @@ class FunctionnalLogger
         }
 
         if (self::IDENTIY_MAP_CLASS === $this->type) {
-            self::$lastClass = $index;
-        }
-
-        if (self::IDENTIY_MAP_OBJECT === $this->type) {
             $this->logger->log('INFO.identity', 'search idendited {class} with identifier {identifier} (return same instance)', [
-                '{class}' => self::$lastClass,
-                '{identifier}' => $index
+                '{class}' => $index[0],
+                '{identifier}' => $index[1]
             ]);
         }
     }
