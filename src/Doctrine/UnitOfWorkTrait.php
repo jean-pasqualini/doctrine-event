@@ -16,7 +16,10 @@ trait UnitOfWorkTrait
         $logger = new Logger();
 
         if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::IDENTIY_MAP_CLASS]) {
-            $this->identityMap = new IdentityMap(new FunctionnalLogger($logger, FunctionnalLogger::IDENTIY_MAP_CLASS, $resoverSplObjectHash), $this->identityMap);
+            $this->identityMap = new IdentityMap(
+                new FunctionnalLogger($logger, FunctionnalLogger::IDENTIY_MAP_CLASS, $resoverSplObjectHash),
+                $this
+            );
         }
 
         if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ENTITY_IDENTIFIER] && !$this->entityIdentifiers instanceof LoggedMap) {

@@ -9,9 +9,6 @@ use Symfony\Component\Process\Process;
 
 require __DIR__.'/../vendor/autoload.php';
 
-$reflClass = new \ReflectionClass(UnitOfWork::class);
-var_dump($reflClass->getFileName());
-
 $demos = [
     new GoodScenario\ProductWorkflowDemo(),
     new GoodScenario\CategoryWithProductWorkflowDemo(),

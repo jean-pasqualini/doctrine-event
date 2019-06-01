@@ -8,6 +8,19 @@ use App\Logger;
 
 class FunctionnalLogger
 {
+    const REAL_HAST = [
+        'rouge',
+        'vert',
+        'bleu',
+        'jaune',
+        'orange',
+        'violet',
+        'noir',
+        'blanc',
+        'gris',
+        'marron'
+    ];
+
     const ENTITY_IDENTIFIER = 1;
     const ORIGINAL_ENTITY_DATA = 2;
     const ENTITY_CHANGESET = 3;
@@ -36,11 +49,30 @@ class FunctionnalLogger
      */
     private $resolveSplObjectHash;
 
+    private static $indexHash = 0;
+    private static $mapHash = [];
+
     public function __construct(Logger $logger, int $type, ResolveSplObjectHash $resolveSplObjectHash)
     {
         $this->logger = $logger;
         $this->type = $type;
         $this->resolveSplObjectHash = $resolveSplObjectHash;
+    }
+
+    private function getLiteralHash($hash)
+    {
+        if (isset(self::$mapHash[$hash])) {
+            return self::$mapHash[$hash];
+        }
+
+        if (!isset(self::REAL_HAST[self::$indexHash])) {
+            return $hash;
+        }
+
+        self::$mapHash[$hash] = self::REAL_HAST[self::$indexHash];
+        self::$indexHash++;
+
+        return self::$mapHash[$hash];
     }
 
     public function set($index, $value)
@@ -71,7 +103,7 @@ class FunctionnalLogger
                 $this->logger->log('INFO.original', 'add in original data of ({class}) field {field} with value {value}', [
                     '{class}' => $this->dumpObject($this->last),
                     '{field}' => $index,
-                    '{value}' => $value
+                    '{value}' => $this->dumpScalar($value)
                 ]);
             }
         }
@@ -113,7 +145,7 @@ class FunctionnalLogger
     public function dumpObject($scalar)
     {
         if (is_object($scalar)) {
-            return get_class($scalar) . ' (id=' . ($scalar->getId() ?: 'null') . ', hash='.spl_object_hash($scalar).')';
+            return get_class($scalar) . ' (id=' . ($scalar->getId() ?: 'null') . ', hash='.$this->getLiteralHash(spl_object_hash($scalar)).')';
         }
 
         return 'null';

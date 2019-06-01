@@ -1,59 +1,117 @@
 <?php
 
+declare(strict_types=1);
 
 namespace App\Doctrine;
 
+use function count;
+use Doctrine\ORM\UnitOfWork;
+use function get_class;
+use function serialize;
 
-use App\Logger;
-
-class IdentityMap extends LoggedMap
+/**
+ * Class for maintaining an object identity map.
+ */
+class IdentityMap
 {
-    /** @var FunctionnalLogger */
-    private $logger;
+    /** @var object[][] */
+    private $identityMap = [];
+    /**
+     * @var FunctionnalLogger
+     */
+    private $functionnalLogger;
+    /**
+     * @var UnitOfWork
+     */
+    private $unitOfWork;
 
-    private $data = [];
-
-    public function __construct(FunctionnalLogger $logger, $input = array())
+    public function __construct(FunctionnalLogger $functionnalLogger, UnitOfWork $unitOfWork)
     {
-        $this->logger = $logger;
-        $this->data = $input;
+        $this->functionnalLogger = $functionnalLogger;
+        $this->unitOfWork = $unitOfWork;
     }
 
-    public function offsetSet($index, $newval)
+    /**
+     * @param object $object
+     */
+    public function contains($object, $objectIdentifier) : bool
     {
-        /**
-        $this->logger->log('[identityMap] [class]', 'SET {key}', [
-            '{key}' => $index,
-        ]);
-         */
-        $this->data[$index] = $newval;
+        $className = get_class($object);
+
+        return isset($this->identityMap[$className][$objectIdentifier]);
     }
 
-    public function offsetGet($index)
+    /**
+     * @param object $object
+     */
+    public function hasObjectIdentifier($className, $objectIdentifier) : bool
     {
-        $this->logger->get($index);
+        return isset($this->identityMap[$className][$objectIdentifier]);
+    }
 
-        if (class_exists($index)) {
-            if (!isset($this->data[$index])) {
-                $this->data[$index] = new IdentityMapObject(
-                    new FunctionnalLogger($this->logger->getLogger(), FunctionnalLogger::IDENTIY_MAP_OBJECT, $this->logger->getResolveSplObjectHash()),
-                    []
-                );
-            }
+    /**
+     * @param object $object
+     */
+    public function getObject($className, $objectIdentifier)
+    {
+        return $this->identityMap[$className][$objectIdentifier];
+    }
 
-            return $this->data[$index];
+    /**
+     * @param object $object
+     */
+    public function setObject($className, $objectIdentifier) : bool
+    {
+        return $this->identityMap[$className][$objectIdentifier];
+    }
+
+    public function removeObject($className, $objectIdentifier)
+    {
+        unset($this->identityMap[$className][$objectIdentifier]);
+    }
+
+    /**
+     * @param mixed[] $data
+     *
+     * @return object|null
+     */
+    public function tryGetById(string $className, $objectIdentifier)
+    {
+        if (isset($this->identityMap[$className][$objectIdentifier])) {
+            return $this->identityMap[$className][$objectIdentifier];
         }
 
-        return $this->data[$index];
+        return false;
     }
 
-    public function offsetExists($offset)
+    /**
+     * @param object  $object
+     * @param mixed[] $data
+     */
+    public function addToIdentityMap($object) : void
     {
-        return isset($this->data[$offset]);
+        $rootName = $this->unitOfWork->getRootEntityName($object);
+        $identifiersHash = $this->unitOfWork->getEntityIdentifierHash($object);
+
+        $this->identityMap[$rootName][$identifiersHash] = $object;
     }
 
-    public function offsetUnset($offset)
+    /**
+     * @param object  $object
+     * @param mixed[] $data
+     */
+    public function addComplexToIdentityMap($rootName, $objectIdentifier, $object) : void
     {
-        unset($this->data[$offset]);
+        $this->identityMap[$rootName][$objectIdentifier] = $object;
+    }
+
+    public function count() : int
+    {
+        return count($this->identityMap);
+    }
+
+    public function toArray()
+    {
+        return $this->identityMap;
     }
 }
