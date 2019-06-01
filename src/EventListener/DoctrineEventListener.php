@@ -2,6 +2,7 @@
 
 namespace App\EventListener;
 
+use App\Doctrine\FunctionnalLogger;
 use App\Logger;
 use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Events;
@@ -32,12 +33,23 @@ class DoctrineEventListener implements EventSubscriber
         ];
     }
 
+    public function dumpObject($scalar, $hash = null)
+    {
+        if (is_object($scalar)) {
+            return get_class($scalar) . ' (id=' . ($scalar->getId() ?: 'null') . ', hash='.FunctionnalLogger::getLiteralHash(spl_object_hash($scalar)).')';
+        }
+
+        return 'null';
+    }
+
     public function __call($name, $arguments)
     {
         $class = 'all';
+        $color = Logger::COLOR_BLACK;
         if (isset($arguments[0]) && is_object($arguments[0])) {
             if (method_exists($arguments[0], 'getEntity')) {
-                $class = get_class($arguments[0]->getEntity());
+                $class = $this->dumpObject($arguments[0]->getEntity());
+                $color = FunctionnalLogger::getColorHash(spl_object_hash($arguments[0]->getEntity()));
             }
         }
 
@@ -47,7 +59,8 @@ class DoctrineEventListener implements EventSubscriber
             [
                 '{name}' => $name,
                 '{class}' => $class,
-            ]
+            ],
+            $color
         );
     }
 }

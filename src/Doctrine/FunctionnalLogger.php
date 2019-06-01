@@ -5,6 +5,7 @@ namespace App\Doctrine;
 
 
 use App\Logger;
+use Doctrine\ORM\UnitOfWork;
 
 class FunctionnalLogger
 {
@@ -43,6 +44,17 @@ class FunctionnalLogger
         'WATTO',
     ];
 
+    const COLOR_HAST = [
+        -1 => Logger::COLOR_BLACK, // Black,
+        0  => Logger::COLOR_RED, // Rouge
+        1  => Logger::COLOR_GREEN, // Vert
+        2  => Logger::COLOR_YELLOW, // Jaune
+        3  => Logger::COLOR_BLUE, // Bleu
+        4  => Logger::COLOR_VIOLET, // Violet
+        5  => Logger::COLOR_BLUE_LIGHT, // Bleu clair
+        6  => Logger::COLOR_WHITE, // Blanc
+    ];
+
     const ENTITY_IDENTIFIER = 1;
     const ORIGINAL_ENTITY_DATA = 2;
     const ENTITY_CHANGESET = 3;
@@ -53,6 +65,14 @@ class FunctionnalLogger
     const ENTITY_DELETE = 8;
     const IDENTIY_MAP_CLASS = 9;
     const IDENTIY_MAP_OBJECT = 10;
+    const ENTITY_ORPHAN_REMOVAL = 11;
+
+    const LITERAL_STATE = [
+        UnitOfWork::STATE_DETACHED => 'DETACHED',
+        UnitOfWork::STATE_NEW => 'NEW',
+        UnitOfWork::STATE_REMOVED => 'REMOVED',
+        UnitOfWork::STATE_MANAGED => 'MANAGED',
+    ];
 
     /**
      * @var Logger
@@ -72,6 +92,8 @@ class FunctionnalLogger
     private $resolveSplObjectHash;
 
     private static $indexHash = 0;
+    private static $indexColor = 0;
+    private static $mapColor = [];
     private static $mapHash = [];
 
     public function __construct(Logger $logger, int $type, ResolveSplObjectHash $resolveSplObjectHash)
@@ -81,7 +103,7 @@ class FunctionnalLogger
         $this->resolveSplObjectHash = $resolveSplObjectHash;
     }
 
-    private function getLiteralHash($hash)
+    public static function getLiteralHash($hash)
     {
         if (isset(self::$mapHash[$hash])) {
             return self::$mapHash[$hash];
@@ -95,6 +117,22 @@ class FunctionnalLogger
         self::$indexHash++;
 
         return self::$mapHash[$hash];
+    }
+
+    public static function getColorHash($hash)
+    {
+        if (isset(self::$mapColor[$hash])) {
+            return self::$mapColor[$hash];
+        }
+
+        if (!isset(self::COLOR_HAST[self::$indexColor])) {
+            return $hash;
+        }
+
+        self::$mapColor[$hash] = self::COLOR_HAST[self::$indexColor];
+        self::$indexColor++;
+
+        return self::$mapColor[$hash];
     }
 
     public function set($index, $value)
@@ -118,9 +156,9 @@ class FunctionnalLogger
             // Entity by hash
             if (strrpos($index, '000000') !== false) {
                 $this->logger->log('INFO.original', 'set original data of ({class}) with {body}', [
-                    '{class}' => $this->dumpObject($this->resolveSplObjectHash->resolve($index)),
+                    '{class}' => $this->dumpObject($this->resolveSplObjectHash->resolve($index), $index),
                     '{body}' => json_encode($value),
-                ]);
+                ], self::getColorHash($index));
             } else { // Specified field in entity
                 $this->logger->log('INFO.original', 'add in original data of ({class}) field {field} with value {value}', [
                     '{class}' => $this->dumpObject($this->last),
@@ -139,6 +177,17 @@ class FunctionnalLogger
             $this->logger->log('INFO.changeset', 'update changeset of ({class}) with {body}', [
                 '{class}' => $this->dumpObject($this->resolveSplObjectHash->resolve($index)),
                 '{body}' => json_encode($value)
+            ]);
+        }
+        if (self::ENTITY_ORPHAN_REMOVAL === $this->type) {
+            $this->logger->log('INFO.orphan', 'one object ({class}) has scheduled for orphan removal', [
+                '{class}' => $this->dumpObject($value)
+            ]);
+        }
+        if (self::ENTITY_STATE === $this->type) {
+            $this->logger->log('INFO.state', '{class} is {state}', [
+                '{class}' => $this->dumpObject($this->resolveSplObjectHash->resolve($index), $index),
+                '{state}' => self::LITERAL_STATE[$value]
             ]);
         }
     }
@@ -164,10 +213,14 @@ class FunctionnalLogger
         return gettype($scalar) . '=' . $scalar;
     }
 
-    public function dumpObject($scalar)
+    public function dumpObject($scalar, $hash = null)
     {
+        if (is_null($scalar) && $hash !== null) {
+            return 'null (hash='.self::getLiteralHash($hash).')';
+        }
+
         if (is_object($scalar)) {
-            return get_class($scalar) . ' (id=' . ($scalar->getId() ?: 'null') . ', hash='.$this->getLiteralHash(spl_object_hash($scalar)).')';
+            return get_class($scalar) . ' (id=' . ($scalar->getId() ?: 'null') . ', hash='.self::getLiteralHash(spl_object_hash($scalar)).')';
         }
 
         return 'null';

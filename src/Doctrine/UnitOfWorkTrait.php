@@ -60,6 +60,16 @@ trait UnitOfWorkTrait
             );
         }
 
+        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ENTITY_ORPHAN_REMOVAL] && !$this->orphanRemovals instanceof LoggedMap) {
+            $this->orphanRemovals = new LoggedMap(
+                new FunctionnalLogger($logger, FunctionnalLogger::ENTITY_ORPHAN_REMOVAL, $resoverSplObjectHash),
+                $this->orphanRemovals,
+                true,
+                false,
+                $resoverSplObjectHash
+            );
+        }
+
         if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::EXTRA_UPDATE]) {
             $this->extraUpdates = new LoggedMap(
                 new FunctionnalLogger($logger, FunctionnalLogger::EXTRA_UPDATE, $resoverSplObjectHash),

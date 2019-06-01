@@ -87,6 +87,7 @@ class UnitOfWork implements PropertyChangedListener
         FunctionnalLogger::ENTITY_INSERT            => true,
         FunctionnalLogger::ENTITY_UPDATE            => true,
         FunctionnalLogger::ENTITY_DELETE            => true,
+        FunctionnalLogger::ENTITY_ORPHAN_REMOVAL    => true,
     ];
 
     /**

@@ -23,7 +23,7 @@ $config->setSQLLogger(new SqlLogger($logger));
 
 $conn = array(
     'driver' => 'pdo_sqlite',
-    'path' => __DIR__ . '/../db.sqlite',
+    'path' => __DIR__ . '/../database/db.sqlite',
 );
 
 $eventManager = new EventManager();
