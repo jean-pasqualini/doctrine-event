@@ -25,10 +25,13 @@ class IdentityMap
      */
     private $unitOfWork;
 
+    private static $instances = 0;
+
     public function __construct(FunctionnalLogger $functionnalLogger, UnitOfWork $unitOfWork)
     {
         $this->functionnalLogger = $functionnalLogger;
         $this->unitOfWork = $unitOfWork;
+        self::$instances++;
     }
 
     /**
@@ -77,6 +80,7 @@ class IdentityMap
      */
     public function tryGetById(string $className, $objectIdentifier)
     {
+        $objectIdentifier = implode(' ', (array) $objectIdentifier);
         if (isset($this->identityMap[$className][$objectIdentifier])) {
             return $this->identityMap[$className][$objectIdentifier];
         }
@@ -93,7 +97,7 @@ class IdentityMap
         $rootName = $this->unitOfWork->getRootEntityName($object);
         $identifiersHash = $this->unitOfWork->getEntityIdentifierHash($object);
 
-        $this->identityMap[$rootName][$identifiersHash] = $object;
+        $this->addComplexToIdentityMap($rootName, $identifiersHash, $object);
     }
 
     /**
@@ -102,6 +106,7 @@ class IdentityMap
      */
     public function addComplexToIdentityMap($rootName, $objectIdentifier, $object) : void
     {
+        $objectIdentifier = implode(' ', (array) $objectIdentifier);
         $this->identityMap[$rootName][$objectIdentifier] = $object;
     }
 

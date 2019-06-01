@@ -15,7 +15,7 @@ trait UnitOfWorkTrait
         $resoverSplObjectHash = new ResolveSplObjectHash($this);
         $logger = new Logger();
 
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::IDENTIY_MAP_CLASS]) {
+        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::IDENTIY_MAP_CLASS] && !$this->identityMap instanceof IdentityMap) {
             $this->identityMap = new IdentityMap(
                 new FunctionnalLogger($logger, FunctionnalLogger::IDENTIY_MAP_CLASS, $resoverSplObjectHash),
                 $this
