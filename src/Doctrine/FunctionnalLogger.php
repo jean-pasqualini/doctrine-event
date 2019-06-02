@@ -5,6 +5,7 @@ namespace App\Doctrine;
 
 
 use App\Logger;
+use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\UnitOfWork;
 
 class FunctionnalLogger
@@ -66,6 +67,11 @@ class FunctionnalLogger
     const IDENTIY_MAP_CLASS = 9;
     const IDENTIY_MAP_OBJECT = 10;
     const ENTITY_ORPHAN_REMOVAL = 11;
+    const COLLECTION_UPDATED = 12;
+    const PERSISTENT_COLLECTION = 13;
+
+    const PERSISTENT_COLLECTION_CREATE = 'create';
+    const PERSISTENT_COLLECTION_MARK_DIRTY = 'dirty';
 
     const LITERAL_STATE = [
         UnitOfWork::STATE_DETACHED => 'DETACHED',
@@ -121,6 +127,14 @@ class FunctionnalLogger
 
     public static function getColorHash($hash)
     {
+        if (is_null($hash)) {
+            return Logger::COLOR_BLACK;
+        }
+
+        if (is_object($hash)) {
+            $hash = spl_object_hash($hash);
+        }
+
         if (isset(self::$mapColor[$hash])) {
             return self::$mapColor[$hash];
         }
@@ -140,17 +154,17 @@ class FunctionnalLogger
         if (self::ENTITY_INSERT === $this->type) {
             $this->logger->log('INFO.schedule', 'one object ({class}) has scheduled for insert', [
                 '{class}' => $this->dumpObject($value)
-            ]);
+            ], self::getColorHash($value));
         }
         if (self::ENTITY_UPDATE === $this->type) {
             $this->logger->log('INFO.schedule', 'one object ({class}) has scheduled for update', [
                 '{class}' => $this->dumpObject($value)
-            ]);
+            ], self::getColorHash($value));
         }
         if (self::ENTITY_DELETE === $this->type) {
             $this->logger->log('INFO.schedule', 'one object ({class}) has scheduled for delete', [
                 '{class}' => $this->dumpObject($value)
-            ]);
+            ], self::getColorHash($value));
         }
         if (self::ORIGINAL_ENTITY_DATA === $this->type) {
             // Entity by hash
@@ -164,31 +178,52 @@ class FunctionnalLogger
                     '{class}' => $this->dumpObject($this->last),
                     '{field}' => $index,
                     '{value}' => $this->dumpScalar($value)
-                ]);
+                ], self::getColorHash($this->last));
             }
         }
         if (self::IDENTIY_MAP_CLASS === $this->type) {
             $this->logger->log('INFO.identity', 'add to identitymap ({class}) with identifier {identifier}', [
                 '{class}' => $this->dumpObject($value),
                 '{identifier}' => $index
-            ]);
+            ], self::getColorHash($value));
         }
         if (self::ENTITY_CHANGESET === $this->type) {
             $this->logger->log('INFO.changeset', 'update changeset of ({class}) with {body}', [
                 '{class}' => $this->dumpObject($this->resolveSplObjectHash->resolve($index)),
                 '{body}' => json_encode($value)
-            ]);
+            ], self::getColorHash($index));
         }
         if (self::ENTITY_ORPHAN_REMOVAL === $this->type) {
             $this->logger->log('INFO.orphan', 'one object ({class}) has scheduled for orphan removal', [
                 '{class}' => $this->dumpObject($value)
-            ]);
+            ], self::getColorHash($value));
         }
         if (self::ENTITY_STATE === $this->type) {
             $this->logger->log('INFO.state', '{class} is {state}', [
                 '{class}' => $this->dumpObject($this->resolveSplObjectHash->resolve($index), $index),
                 '{state}' => self::LITERAL_STATE[$value]
-            ]);
+            ], self::getColorHash($index));
+        }
+        if (self::COLLECTION_UPDATED === $this->type && $value instanceof PersistentCollection) {
+            $mapping = $value->getMapping();
+            $this->logger->log('INFO.collection', 'Scheduled update ({relation}) owner by {class}', [
+                '{class}' => $this->dumpObject($value->getOwner()),
+                '{relation}' => $mapping['sourceEntity'].'#'.$mapping['fieldName']
+            ], self::getColorHash(spl_object_hash($value->getOwner())));
+        }
+        if (self::PERSISTENT_COLLECTION === $this->type) {
+            if (self::PERSISTENT_COLLECTION_CREATE === $index) {
+                $mapping = $value->getMapping();
+                $this->logger->log('INFO.collection', 'Wrap relation with Persistent collection ({relation})', [
+                    '{relation}' => $mapping['sourceEntity'].'#'.$mapping['fieldName']
+                ], self::getColorHash(spl_object_hash($value->getOwner())));
+            }
+            if (self::PERSISTENT_COLLECTION_MARK_DIRTY === $index) {
+                $mapping = $value->getMapping();
+                $this->logger->log('INFO.collection', 'Persistent collection ({relation}) marked dirty (detect live change)', [
+                    '{relation}' => $mapping['sourceEntity'].'#'.$mapping['fieldName']
+                ], self::getColorHash(spl_object_hash($value->getOwner())));
+            }
         }
     }
 

@@ -9,6 +9,41 @@ use Doctrine\ORM\UnitOfWork;
 
 trait UnitOfWorkTrait
 {
+    private $resoverSplObjectHash;
+    private $spyLogger;
+
+    private function spyArray($property, $type, $imbriqued)
+    {
+        if (UnitOfWork::WRAP_ARRAY[$type] && !$this->{$property} instanceof LoggedMap) {
+            $this->{$property} = new LoggedMap(
+                new FunctionnalLogger(
+                    $this->getSpyLogger(),
+                    $type,
+                    $this->getResolverSplObjectHash()
+                ),
+                $this->{$property},
+                $imbriqued
+            );
+        }
+    }
+
+    private function getResolverSplObjectHash()
+    {
+        if (null === $this->resoverSplObjectHash) {
+            $this->resoverSplObjectHash = new ResolveSplObjectHash($this);
+        }
+
+        return $this->resoverSplObjectHash;
+    }
+
+    private function getSpyLogger()
+    {
+        if (null === $this->spyLogger) {
+            $this->spyLogger = new Logger();
+        }
+
+        return $this->spyLogger;
+    }
 
     public function wrapArray()
     {
@@ -22,77 +57,15 @@ trait UnitOfWorkTrait
             );
         }
 
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ENTITY_IDENTIFIER] && !$this->entityIdentifiers instanceof LoggedMap) {
-            $this->entityIdentifiers = new LoggedMap(
-                new FunctionnalLogger($logger, FunctionnalLogger::ENTITY_IDENTIFIER, $resoverSplObjectHash),
-                $this->entityIdentifiers,
-                true,
-                false
-            );
-        }
-
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ORIGINAL_ENTITY_DATA] && !$this->originalEntityData instanceof LoggedMap) {
-            $this->originalEntityData = new LoggedMap(
-                new FunctionnalLogger($logger, FunctionnalLogger::ORIGINAL_ENTITY_DATA, $resoverSplObjectHash),
-                $this->originalEntityData,
-                true,
-                true
-            );
-        }
-
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ENTITY_CHANGESET]) {
-            $this->entityChangeSets = new LoggedMap(
-                new FunctionnalLogger($logger, FunctionnalLogger::ENTITY_CHANGESET, $resoverSplObjectHash),
-                $this->entityChangeSets,
-                true,
-                false,
-                $resoverSplObjectHash
-            );
-        }
-
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ENTITY_STATE] && !$this->entityStates instanceof LoggedMap) {
-            $this->entityStates = new LoggedMap(
-                new FunctionnalLogger($logger, FunctionnalLogger::ENTITY_STATE, $resoverSplObjectHash),
-                $this->entityStates,
-                true,
-                false,
-                $resoverSplObjectHash
-            );
-        }
-
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ENTITY_ORPHAN_REMOVAL] && !$this->orphanRemovals instanceof LoggedMap) {
-            $this->orphanRemovals = new LoggedMap(
-                new FunctionnalLogger($logger, FunctionnalLogger::ENTITY_ORPHAN_REMOVAL, $resoverSplObjectHash),
-                $this->orphanRemovals,
-                true,
-                false,
-                $resoverSplObjectHash
-            );
-        }
-
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::EXTRA_UPDATE]) {
-            $this->extraUpdates = new LoggedMap(
-                new FunctionnalLogger($logger, FunctionnalLogger::EXTRA_UPDATE, $resoverSplObjectHash),
-                $this->extraUpdates,
-                true,
-                false,
-                $resoverSplObjectHash
-            );
-        }
-
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ENTITY_INSERT]) {
-            $this->entityInsertions = new LoggedMap(new FunctionnalLogger($logger, FunctionnalLogger::ENTITY_INSERT, $resoverSplObjectHash), $this->entityInsertions, true, false);
-        }
-
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ENTITY_UPDATE]) {
-            $this->entityUpdates = new LoggedMap(new FunctionnalLogger($logger, FunctionnalLogger::ENTITY_UPDATE, $resoverSplObjectHash), $this->entityUpdates, true, false);
-        }
-
-        if (UnitOfWork::WRAP_ARRAY[FunctionnalLogger::ENTITY_DELETE]) {
-            $this->entityDeletions = new LoggedMap(new FunctionnalLogger($logger, FunctionnalLogger::ENTITY_DELETE, $resoverSplObjectHash), $this->entityDeletions, true, false);
-        }
-        //$this->entityInsertions = new \ArrayObject($this->entityInsertions);
-        //$this->entityUpdates = new \ArrayObject($this->entityUpdates);
-        //$this->entityDeletions = new \ArrayObject($this->entityDeletions);
+        $this->spyArray('entityIdentifiers', FunctionnalLogger::ENTITY_IDENTIFIER, false);
+        $this->spyArray('originalEntityData', FunctionnalLogger::ORIGINAL_ENTITY_DATA, true);
+        $this->spyArray('entityChangeSets', FunctionnalLogger::ENTITY_CHANGESET, false);
+        $this->spyArray('entityStates', FunctionnalLogger::ENTITY_STATE, false);
+        $this->spyArray('orphanRemovals', FunctionnalLogger::ENTITY_ORPHAN_REMOVAL, false);
+        $this->spyArray('extraUpdates', FunctionnalLogger::EXTRA_UPDATE, false);
+        $this->spyArray('entityInsertions', FunctionnalLogger::ENTITY_INSERT, false);
+        $this->spyArray('entityUpdates', FunctionnalLogger::ENTITY_UPDATE, false);
+        $this->spyArray('entityDeletions', FunctionnalLogger::ENTITY_DELETE, false);
+        $this->spyArray('collectionUpdates', FunctionnalLogger::COLLECTION_UPDATED, false);
     }
 }

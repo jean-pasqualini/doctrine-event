@@ -88,6 +88,7 @@ class UnitOfWork implements PropertyChangedListener
         FunctionnalLogger::ENTITY_UPDATE            => true,
         FunctionnalLogger::ENTITY_DELETE            => true,
         FunctionnalLogger::ENTITY_ORPHAN_REMOVAL    => true,
+        FunctionnalLogger::COLLECTION_UPDATED       => true,
     ];
 
     /**
@@ -425,7 +426,7 @@ class UnitOfWork implements PropertyChangedListener
                 $this->getCollectionPersister($collectionToUpdate->getMapping())->update($collectionToUpdate);
             }
 
-            // Entity deletions come last and need to be in reverse commit order
+            // Entity deletions come last and need to be in reverse commit orderthis->collectionUpda
             if ($this->entityDeletions) {
                 for ($count = count($commitOrder), $i = $count - 1; $i >= 0 && $this->entityDeletions; --$i) {
                     $this->executeDeletions($commitOrder[$i]);

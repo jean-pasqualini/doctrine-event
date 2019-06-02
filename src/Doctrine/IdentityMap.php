@@ -60,14 +60,6 @@ class IdentityMap
         return $this->identityMap[$className][$objectIdentifier];
     }
 
-    /**
-     * @param object $object
-     */
-    public function setObject($className, $objectIdentifier) : bool
-    {
-        return $this->identityMap[$className][$objectIdentifier];
-    }
-
     public function removeObject($className, $objectIdentifier)
     {
         unset($this->identityMap[$className][$objectIdentifier]);
@@ -76,7 +68,7 @@ class IdentityMap
     /**
      * @param mixed[] $data
      *
-     * @return object|null
+     * @return object|false
      */
     public function tryGetById(string $className, $objectIdentifier)
     {
@@ -100,7 +92,6 @@ class IdentityMap
         $identifiersHash = $this->unitOfWork->getEntityIdentifierHash($object);
 
         $this->addComplexToIdentityMap($rootName, $identifiersHash, $object);
-        $this->functionnalLogger->set($identifiersHash, $object);
     }
 
     /**
