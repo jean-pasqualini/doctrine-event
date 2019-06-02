@@ -10,7 +10,8 @@
         },
         "files": [
             "./src/Doctrine/UnitOfWork.php",
-            "./src/Doctrine/PersistentCollection.php"
+            "./src/Doctrine/PersistentCollection.php",
+            "./src/Doctrine/ProxyFactory.php"
         ]
     },
     "authors": [

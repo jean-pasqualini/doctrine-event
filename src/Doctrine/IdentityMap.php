@@ -57,6 +57,7 @@ class IdentityMap
      */
     public function getObject($className, $objectIdentifier)
     {
+        $this->functionnalLogger->get([$className, $objectIdentifier]);
         return $this->identityMap[$className][$objectIdentifier];
     }
 

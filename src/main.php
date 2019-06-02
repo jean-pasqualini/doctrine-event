@@ -4,6 +4,7 @@ namespace App;
 use App\Demo\CascadePersistWithOrphanRemovalScenario;
 use App\Demo\GoodScenario;
 use App\Demo\BadScenario;
+use App\Demo\LazyLoadDirectRelation;
 use App\Doctrine\FunctionnalLogger;
 use Doctrine\ORM\UnitOfWork;
 use Symfony\Component\Process\Process;
@@ -20,6 +21,7 @@ $demos = [
     new BadScenario\OnUpdateWorkflowDemo(),
     new BadScenario\OnPrePersistWorkflowDemo(),
     new CascadePersistWithOrphanRemovalScenario(),
+    new LazyLoadDirectRelation(),
 ];
 
 $filter = $argv[1] ?? null;

@@ -29,7 +29,9 @@ class DoctrineEventListener implements EventSubscriber
             Events::preRemove,
             Events::postRemove,
             Events::preUpdate,
-            Events::postUpdate
+            Events::postUpdate,
+            Events::onClear,
+            Events::onClassMetadataNotFound,
         ];
     }
 
