@@ -6,6 +6,8 @@ namespace App\Demo;
 
 use App\Entity\Article;
 use App\Entity\Picture;
+use Doctrine\ORM\Event\LifecycleEventArgs;
+use Doctrine\ORM\Events;
 
 class CascadePersistWithOrphanRemovalScenario extends AbstractWorkflowDemo
 {
@@ -18,6 +20,7 @@ class CascadePersistWithOrphanRemovalScenario extends AbstractWorkflowDemo
         $this->stepNewArticleWithPicture();
         $this->stepNewPictureOnPreviousArticleExplicitPersist();
         $this->stepNewPictureOnPreviousArticleNotExplicitPersist();
+        $this->stepTestPersistWhenPrepersistDeclanchedOnFlush();
     }
 
     public function stepNewArticleWithPicture()
@@ -58,6 +61,37 @@ class CascadePersistWithOrphanRemovalScenario extends AbstractWorkflowDemo
     public function stepNewPictureOnPreviousArticleNotExplicitPersist()
     {
         $this->preStep(__METHOD__);
+
+        /** @var Article $article */
+        $article = $this->em->getRepository(Article::class)->find($this->articeId);
+
+        $picture = new Picture();
+        $picture->setUrl('newurl');
+
+        $article->setPicture($picture);
+
+        $this->em->flush();
+    }
+
+    public function stepTestPersistWhenPrepersistDeclanchedOnFlush()
+    {
+        $this->preStep(__METHOD__);
+
+        $this->em->getEventManager()->addEventListener(Events::prePersist, new Class()
+        {
+
+            public function prePersist(LifecycleEventArgs $eventArgs)
+            {
+                if (!$eventArgs->getEntity() instanceof Picture) {
+                    return;
+                }
+
+                $newArticle = new Article();
+                $newArticle->setTitle('persist on prePersist');
+
+                $eventArgs->getEntityManager()->persist($newArticle);
+            }
+        });
 
         /** @var Article $article */
         $article = $this->em->getRepository(Article::class)->find($this->articeId);
