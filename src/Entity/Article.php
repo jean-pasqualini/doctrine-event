@@ -3,6 +3,8 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 use App\Entity\Picture;
@@ -30,6 +32,16 @@ class Article
      * @ORM\OneToOne(targetEntity="Picture", cascade={"all"}, orphanRemoval=true)
      */
     private $picture;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="Commentaire", cascade={"all"})
+     */
+    private $comments;
+
+    public function __construct()
+    {
+        $this->comments = new ArrayCollection();
+    }
 
     /**
      * @param mixed $id
@@ -77,5 +89,18 @@ class Article
     public function getPicture()
     {
         return $this->picture;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
+    public function addComment(Commentaire $comment)
+    {
+        $this->comments->add($comment);
     }
 }
