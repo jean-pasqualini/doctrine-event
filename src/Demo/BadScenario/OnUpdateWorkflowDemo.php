@@ -35,6 +35,11 @@ class OnUpdateWorkflowDemo extends AbstractWorkflowDemo
         $product = $this->em->getRepository(Product::class)->findOneBy(['label' => __CLASS__]);
         $product->setName(strrev($product->getName()));
 
+        $product = new Product();
+        $product->setName('ne pas tenir compte');
+
+        $this->em->persist($product);
+
         $this->em->flush();
     }
 
@@ -82,6 +87,10 @@ class OnUpdateWorkflowDemo extends AbstractWorkflowDemo
                 $product->setName('product_create_on_preupdate_event');
 
                 $em->persist($product);
+                $em->getUnitOfWork()->computeChangeSet(
+                    $em->getClassMetadata(Product::class),
+                    $product
+                );
             }
         });
 
