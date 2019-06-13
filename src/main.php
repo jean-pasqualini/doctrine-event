@@ -6,6 +6,7 @@ use App\Demo\GoodScenario;
 use App\Demo\BadScenario;
 use App\Demo\LazyLoadDirectRelation;
 use App\Demo\BadScenario\RemoveItemOnCollectionWhenPrePersist;
+use App\Demo\ReadOnlyScenario;
 use App\Doctrine\FunctionnalLogger;
 use Doctrine\ORM\UnitOfWork;
 use Symfony\Component\Process\Process;
@@ -23,7 +24,7 @@ $demos = [
     new BadScenario\OnPrePersistWorkflowDemo(),
     new CascadePersistWithOrphanRemovalScenario(),
     new LazyLoadDirectRelation(),
-    new RemoveItemOnCollectionWhenPrePersist(),
+    new ReadOnlyScenario(),
 ];
 
 $filter = $argv[1] ?? null;

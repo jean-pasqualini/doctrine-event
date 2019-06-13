@@ -6,6 +6,8 @@ namespace App\Demo;
 
 use App\Entity\Article;
 use App\Entity\Picture;
+use App\Logger;
+use Doctrine\DBAL\Exception\NotNullConstraintViolationException;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Events;
 
@@ -101,6 +103,11 @@ class CascadePersistWithOrphanRemovalScenario extends AbstractWorkflowDemo
 
         $article->setPicture($picture);
 
-        $this->em->flush();
+        try {
+            $this->em->flush();
+        } catch (NotNullConstraintViolationException $exception) {
+            $logger = new Logger();
+            $logger->log('EXCEPTION.doctrine', str_replace(PHP_EOL, ' ', $exception->getMessage()));
+        }
     }
 }
