@@ -238,7 +238,7 @@ class FunctionnalLogger
         }
 
         if (is_object($scalar)) {
-            return 'object=' . get_class($scalar) . ' (id=' . $scalar->getId() . ')';
+            return 'object=' . get_class($scalar) . ' (id=' . $this->getId($scalar) . ')';
         }
 
         if (is_null($scalar)) {
@@ -246,6 +246,13 @@ class FunctionnalLogger
         }
 
         return gettype($scalar) . '=' . $scalar;
+    }
+
+    protected function getId($object)
+    {
+        return (method_exists($object, 'getId'))
+            ? $object->getId()
+            : '?';
     }
 
     public function dumpObject($scalar, $hash = null)
