@@ -2,7 +2,7 @@
     "name": "jean-pasqualini/doctrine-event",
     "require": {
         "doctrine/orm": "^2.5",
-        "symfony/process": "^3.3"
+        "symfony/process": "^5.4"
     },
     "autoload": {
         "psr-4": {
